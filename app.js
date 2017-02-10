@@ -78,7 +78,7 @@ function Item(vm, state) {
           onchange: [vm.opts.trigger, 'todo:toggleCompleted', state]
         }),
         el('label', {
-          ondblclick: [vm.opts.trigger, 'todo:edit', state, vm]
+          ondblclick: [vm.opts.trigger, 'todo:edit', state]
         }, state.title),
         el('button.destroy', {onclick: [vm.opts.trigger, 'todo:delete', state]})
       ]),
@@ -216,7 +216,7 @@ State.on('todo:save', function(todo, e) {
     todo.pivot().set({title: e.currentTarget.value, editing: false});
 });
 
-State.on('todo:edit', function(todo, vm, e, node) {
+State.on('todo:edit', function(todo) {
   todo.set('editing', true);
 });
 
