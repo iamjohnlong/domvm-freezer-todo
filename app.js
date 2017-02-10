@@ -112,8 +112,9 @@ function List(vm, state) {
       el('label', {for: 'toggle-all'}, 'Mark all as complete'),
       el('ul.todo-list',
         filter(state.todos).map(function(todo) {
-          // setting a key blows up return vw(Item, todo, todo.id)
-          return vw(Item, todo)
+          // setting a key blows up 
+          return vw(Item, todo, todo.id);
+          // return vw(Item, todo)
         })
       )
     ]);
