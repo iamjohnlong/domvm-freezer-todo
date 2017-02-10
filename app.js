@@ -26,13 +26,15 @@ var uuid = function () {
   return uuid;
 };
 
+var ENTER_KEY = 13;
+
 var el = domvm.defineElement;
 var diff = function(vm, state) {
   return [state.model];
 };
 var config = {
   diff: diff,
-  trigger: State.trigger
+  // trigger: State.trigger ???
 };
 var vw = function(viewFn, model, key, opts) {
   return domvm.defineView(viewFn, model, key == null ? false : key, config);
@@ -42,7 +44,6 @@ var vw = function(viewFn, model, key, opts) {
  * Views
  */
 function Header(vm, state) {
-  var ENTER_KEY = 13;
   function oninput(e) {
     state.trigger('todo:todoInput', e.target.value);
   };
@@ -216,7 +217,7 @@ State.on('todo:create', function(value) {
 });
 
 State.on('todo:save', function(todo, e) {
-  if (e.keyCode === 13 || e.type === 'blur') 
+  if (e.keyCode === ENTER_KEY || e.type === 'blur') 
     todo.pivot().set({title: e.currentTarget.value, editing: false});
 });
 
