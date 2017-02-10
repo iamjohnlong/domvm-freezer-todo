@@ -67,7 +67,6 @@ function Item(vm, state) {
     }
   });
   return function(vm, state) {
-    console.log(state.id);
     return el('li', {
       class: (state.completed ? 'completed' : '') + ' ' + (state.editing ? 'editing' : ''),
       _key: state.id
