@@ -140,13 +140,22 @@ function Footer(vm, state) {
       ]),
       el('ul.filters', [
         el('li.', [
-          el('a', {href:'/#/'}, 'All')
+          el('a', {
+            href:'/#/',
+            class: state.model.filter === 'all' ? 'selected' : ''
+          }, 'All')
         ]),
         el('li.', [
-          el('a', {href:'/#/active'}, 'Active')
+          el('a', {
+            href:'/#/active',
+            class: state.model.filter === 'active' ? 'selected' : ''
+          }, 'Active')
         ]),
         el('li.', [
-          el('a', {href:'/#/completed'}, 'Completed')
+          el('a', {
+            href:'/#/completed',
+            class: state.model.filter === 'completed' ? 'selected' : ''
+          }, 'Completed')
         ])
       ]),
       el('button.clear-completed', {
