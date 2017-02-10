@@ -44,21 +44,21 @@ var vw = function(viewFn, model, key, opts) {
  * Views
  */
 function Header(vm, state) {
-  function oninput(e) {
-    state.trigger('todo:todoInput', e.target.value);
-  };
-  function createTodo(e) {
-    if (event.keyCode !== ENTER_KEY) return;
-    state.trigger('todo:create', e.target.value);
-  };
+  // function oninput(e) {
+  //   state.trigger('todo:todoInput', e.target.value);
+  // };
+  // function createTodo(e) {
+  //   if (event.keyCode !== ENTER_KEY) return;
+  //   state.trigger('todo:create', e.target.value);
+  // };
   return function(vm, state) {
     return el('header.header', [
       el('h1', 'todos'),
       el('input.new-todo', {
         placeholder: 'What needs to be done?',
         autofocus: '',
-        oninput: oninput,
-        onkeydown: createTodo,
+        oninput: [state.trigger, 'todo:todoInput'],
+        onkeydown: [state.trigger, 'todo:create'],
         value: state.model.todoInput
       })
     ]);
@@ -126,9 +126,6 @@ function List(vm, state) {
 };
 
 function Footer(vm, state) {
-  function clearCompleted() {
-    state.trigger('todo:clearCompleted')
-  };
   function pluralize(w, c) {
     if (c === 1) return w;
     return w + 's';
@@ -160,7 +157,7 @@ function Footer(vm, state) {
         ])
       ]),
       el('button.clear-completed', {
-        onclick: clearCompleted
+        onclick: [state.trigger, 'todo:clearCompleted']
       }, 'Clear completed')
     ]);
   };
@@ -179,8 +176,8 @@ function Main(vm, state) {
 /**
  * Reactions
  */
-State.on('todo:todoInput', function(value) {
-  State.get().set({ todoInput: value }).now();
+State.on('todo:todoInput', function(e) {
+  State.get().set({ todoInput: e.currentTarget.value }).now();
 });
 
 State.on('todo:toggleCompleted', function(todo, e) {
@@ -205,11 +202,12 @@ State.on('todo:clearCompleted', function() {
   state.set('todos', filteredTodos);
 });
 
-State.on('todo:create', function(value) {
+State.on('todo:create', function(e) {
+  if (event.keyCode !== ENTER_KEY) return;
   State.get().pivot()
     .set({ todoInput: '' })
     .todos.push({
-      title: value,
+      title: e.currentTarget.value,
       id: uuid(),
       completed: false,
       editing: false
