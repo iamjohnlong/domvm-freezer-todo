@@ -30,11 +30,11 @@ var ENTER_KEY = 13;
 
 var el = domvm.defineElement;
 var diff = function(vm, state) {
-  return [state.model];
+  return [state];
 };
 var config = {
   diff: diff,
-  // trigger: State.trigger ???
+  trigger: State.trigger
 };
 var vw = function(viewFn, model, key, opts) {
   return domvm.defineView(viewFn, model, key == null ? false : key, config);
@@ -43,23 +43,16 @@ var vw = function(viewFn, model, key, opts) {
 /**
  * Views
  */
-function Header(vm, state) {
-  // function oninput(e) {
-  //   state.trigger('todo:todoInput', e.target.value);
-  // };
-  // function createTodo(e) {
-  //   if (event.keyCode !== ENTER_KEY) return;
-  //   state.trigger('todo:create', e.target.value);
-  // };
+function Header() {
   return function(vm, state) {
     return el('header.header', [
       el('h1', 'todos'),
       el('input.new-todo', {
         placeholder: 'What needs to be done?',
         autofocus: '',
-        oninput: [state.trigger, 'todo:todoInput'],
-        onkeydown: [state.trigger, 'todo:create'],
-        value: state.model.todoInput
+        oninput: [vm.opts.trigger, 'todo:todoInput'],
+        onkeydown: [vm.opts.trigger, 'todo:create'],
+        value: state.todoInput
       })
     ]);
   };
@@ -74,25 +67,27 @@ function Item(vm, state) {
     }
   });
   return function(vm, state) {
+    console.log(state.id);
     return el('li', {
-      class: (state.model.completed ? 'completed' : '') + ' ' + (state.model.editing ? 'editing' : '')
+      class: (state.completed ? 'completed' : '') + ' ' + (state.editing ? 'editing' : ''),
+      _key: state.id
     }, [
       el('.view', [
         el('input.toggle', {
           type: 'checkbox',
-          checked: state.model.completed,
-          onchange: [state.trigger, 'todo:toggleCompleted', state.model]
+          checked: state.completed,
+          onchange: [vm.opts.trigger, 'todo:toggleCompleted', state]
         }),
         el('label', {
-          ondblclick: [state.trigger, 'todo:edit', state.model, vm]
-        }, state.model.title),
-        el('button.destroy', {onclick: [state.trigger, 'todo:delete', state.model]})
+          ondblclick: [vm.opts.trigger, 'todo:edit', state, vm]
+        }, state.title),
+        el('button.destroy', {onclick: [vm.opts.trigger, 'todo:delete', state]})
       ]),
       el('input.edit', {
         _ref: 'editInput',
-        value: state.model.title,
-        onkeypress: [state.trigger, 'todo:save', state.model],
-        onblur: [state.trigger, 'todo:save', state.model]
+        value: state.title,
+        onkeypress: [vm.opts.trigger, 'todo:save', state],
+        onblur: [vm.opts.trigger, 'todo:save', state]
       })
     ])
   }
@@ -101,7 +96,7 @@ function Item(vm, state) {
 function List(vm, state) {
   function filter(todos) {
     return todos.filter(function(todo) {
-      switch (state.model.filter) {
+      switch (state.filter) {
         case "all": return true;
         case "active": return !todo.completed;
         case "completed": return todo.completed;
@@ -112,13 +107,14 @@ function List(vm, state) {
     return el('section.main', [
       el('input.toggle-all', {
         type: 'checkbox',
-        checked: state.model.remaining === 0,
-        onchange: [state.trigger, 'todo:toggleAll', state.model.todos]
+        checked: state.remaining === 0,
+        onchange: [vm.opts.trigger, 'todo:toggleAll', state.todos]
       }),
       el('label', {for: 'toggle-all'}, 'Mark all as complete'),
       el('ul.todo-list',
-        filter(state.model.todos).map(function(todo) {
-          return vw(Item, {trigger: state.trigger, model: todo}, todo.id)
+        filter(state.todos).map(function(todo) {
+          // setting a key blows up return vw(Item, todo, todo.id)
+          return vw(Item, todo)
         })
       )
     ]);
@@ -133,31 +129,31 @@ function Footer(vm, state) {
   return function(vm, state) {
     return el('footer.footer', [
       el('span.todo-count', [
-        el('strong', state.model.remaining), ' ',
-        pluralize('item', state.model.remaining), ' left'
+        el('strong', state.remaining), ' ',
+        pluralize('item', state.remaining), ' left'
       ]),
       el('ul.filters', [
         el('li.', [
           el('a', {
             href:'/#/',
-            class: state.model.filter === 'all' ? 'selected' : ''
+            class: state.filter === 'all' ? 'selected' : ''
           }, 'All')
         ]),
         el('li.', [
           el('a', {
             href:'/#/active',
-            class: state.model.filter === 'active' ? 'selected' : ''
+            class: state.filter === 'active' ? 'selected' : ''
           }, 'Active')
         ]),
         el('li.', [
           el('a', {
             href:'/#/completed',
-            class: state.model.filter === 'completed' ? 'selected' : ''
+            class: state.filter === 'completed' ? 'selected' : ''
           }, 'Completed')
         ])
       ]),
       el('button.clear-completed', {
-        onclick: [state.trigger, 'todo:clearCompleted']
+        onclick: [vm.opts.trigger, 'todo:clearCompleted']
       }, 'Clear completed')
     ]);
   };
@@ -167,8 +163,8 @@ function Main(vm, state) {
   return function(vm, state) {
     return el('section.todoapp', [
       vw(Header, state),
-      vw(List, state, state.model.filter),
-      state.model.todos.length ? vw(Footer, state) : ''
+      vw(List, state, state.filter),
+      state.todos.length ? vw(Footer, state) : ''
     ]);
   };
 };
@@ -190,8 +186,10 @@ State.on('todo:toggleAll', function(todos, e) {
 
 State.on('todo:delete', function(todo) {
   var state = State.get();
-  var idx = state.todos.indexOf(todo);
-  if (idx !== -1) state.set('todos', state.todos.splice(idx, 1));
+  var todos = state.todos.filter(function(t) {
+    return todo.id !== t.id
+  });
+  state.set('todos', todos);
 });
 
 State.on('todo:clearCompleted', function() {
@@ -203,7 +201,7 @@ State.on('todo:clearCompleted', function() {
 });
 
 State.on('todo:create', function(e) {
-  if (event.keyCode !== ENTER_KEY) return;
+  if (e.keyCode !== ENTER_KEY || e.currentTarget.value.length === 0) return;
   State.get().pivot()
     .set({ todoInput: '' })
     .todos.push({
@@ -223,11 +221,10 @@ State.on('todo:edit', function(todo, vm, e, node) {
   todo.set('editing', true);
 });
 
-State.get().todos.getListener().on('update', function(currentState) {
-  var len = currentState.filter(function(todo) {
+State.on('update', function(currentState) {
+  State.get().set({remaining: currentState.todos.filter(function(todo) {
     return !todo.completed;
-  }).length;
-  State.get().set({ remaining: len });
+  }).length});
 });
 
 /**
@@ -244,12 +241,9 @@ function boot() {
       State.get().set({filter: r.route.name});
       State.on('update', function(currentState, prevState) {
         localStorage.setItem('todos', JSON.stringify(currentState.todos.toJS()));
-        rootVm.update({model:currentState, trigger: State.trigger});
+        rootVm.update(currentState);
       });
-      rootVm = domvm.createView(Main, {
-        model: State.get(), 
-        trigger: State.trigger
-      }, false, config).mount(document.body);
+      rootVm = domvm.createView(Main, State.get(), false, config).mount(document.body);
     },
     routes: [
       {
