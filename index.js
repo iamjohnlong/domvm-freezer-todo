@@ -112,9 +112,7 @@ function List(vm, state) {
       el('label', {for: 'toggle-all'}, 'Mark all as complete'),
       el('ul.todo-list',
         filter(state.todos).map(function(todo) {
-          // setting a key blows up 
           return vw(Item, todo, todo.id);
-          // return vw(Item, todo)
         })
       )
     ]);
@@ -135,19 +133,19 @@ function Footer(vm, state) {
       el('ul.filters', [
         el('li.', [
           el('a', {
-            href:'/#/',
+            href:'#/',
             class: state.filter === 'all' ? 'selected' : ''
           }, 'All')
         ]),
         el('li.', [
           el('a', {
-            href:'/#/active',
+            href:'#/active',
             class: state.filter === 'active' ? 'selected' : ''
           }, 'Active')
         ]),
         el('li.', [
           el('a', {
-            href:'/#/completed',
+            href:'#/completed',
             class: state.filter === 'completed' ? 'selected' : ''
           }, 'Completed')
         ])
